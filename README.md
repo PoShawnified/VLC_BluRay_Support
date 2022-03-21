@@ -1,4 +1,4 @@
-# VLC_BluRay_Support
+# VLC BluRay Support
 
 ## Info / Notes
 ### The install.ps1 script attempts a partial automation of [candela's documented steps](https://forum.doom9.org/showthread.php?p=1886086#post1886086)
