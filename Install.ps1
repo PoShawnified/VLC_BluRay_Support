@@ -20,7 +20,7 @@
   .NOTES
     Usage: 
 
-      The script will download the keydb_xxx.zip file at run time. 
+      The script will download the keydb_xxx.zip file at run time, but you may also specify a keydb zip as a param. 
 
       Prep:
         - Create directory
@@ -65,10 +65,6 @@
 [cmdletbinding()]
 param (
 
-  [parameter(mandatory=$false)]
-  [ValidateScript({Get-ChildItem $_})]
-  [string]$VLCPath,
-
   [String]$LibAacsArchive = '.\2020-07-26_libaacs_libbdplus.7z',
 
   [string]$BDPlusVM0Archive = ".\vm0.zip",
@@ -89,6 +85,8 @@ param (
 
     [cmdletbinding()]
     param()
+
+    Write-Verbose -Message "Get-VLCInfo: Begin"
 
     if ($vlcPath = (Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VLC media player').InstallLocation){
 
@@ -141,10 +139,12 @@ param (
       [string]$7zExePath = '.\7z.exe'
     
     )
+    
+    Write-Verbose -Message "Install-LibAACS: Begin"
 
     # Get full archive file details
     Write-Verbose -Message "Collecting file details"
-    $LibAacsArchive = Get-Item $LibAacsArchive
+    $LibAacsArchiveObj = Get-Item $LibAacsArchive
 
     # Create container 
     try { 
@@ -154,19 +154,19 @@ param (
       Write-Verbose -Message "Created temp dir: $($libAacsUnpackDir.FullName)"
 
     }
-    catch { Write-Error "Failed to create temporary unpack directory" }
+    catch { Write-Error "Failed to create temporary unpack directory: : $($_.Nessage)" }
 
     # unpack
     $procArgs = @{
       FilePath               = $7zExePath 
-      ArgumentList           = "x -aoa -o""$($libAacsUnpackDir.FullName)"" $($LibAacsArchive.FullName)" 
+      ArgumentList           = "x -aoa -o""$($libAacsUnpackDir.FullName)"" ""$($LibAacsArchiveObj.FullName)""" 
       PassThru               = $true
       NoNewWindow            = $true
       Wait                   = $true
       RedirectStandardOutput = "$libAacsUnpackDir\7z.log" 
       RedirectStandardError  = "$libAacsUnpackDir\7zErr.logs"
     }
-    Write-Verbose -Message "Starting unpack: $($LibAacsArchive.Name)" 
+    Write-Verbose -Message "Starting unpack: $($LibAacsArchiveObj.Name)" 
     $7zRetCode = Start-Process @procArgs
 
     if ($7zRetCode.ExitCode -ne 0){
@@ -186,7 +186,7 @@ param (
       $null = Copy-Item -Path "$libSource\*" -Destination $VLCPath -Recurse -Force
       
     }
-    catch { Write-Error "Failed to copy files to VLC directory" }
+    catch { Write-Error "Failed to copy files to VLC directory: $($_.Nessage)" }
 
     # Cleanup temp files
     try { 
@@ -195,7 +195,7 @@ param (
       Remove-Item -LiteralPath $libAacsUnpackDir -Recurse -Force 
       
     }
-    catch {Write-Warning "Failed to remove temporary files located in: $libAacsUnpackDir"}
+    catch {Write-Warning "Failed to remove temporary files located in: $libAacsUnpackDir : $($_.Nessage)"}
 
     Write-Verbose -Message "Install-LibAACS: Complete"
 
@@ -217,9 +217,11 @@ param (
     
     )
 
+    Write-Verbose -Message "Install-BDPlusTables: Begin"
+
     # Get full archive file details
     Write-Verbose -Message "Collecting file details"
-    $BDPlusTablesArchive = Get-Item $BDPlusTablesArchive
+    $BDPlusTablesArchiveObj = Get-Item $BDPlusTablesArchive
 
     # Set base dir
     if ($PerUser){ $BasePath = $env:APPDATA }
@@ -228,7 +230,7 @@ param (
     # Create dir
     try {
   
-      if (!(Get-ChildItem "$BasePath\bdplus" -Directory -ErrorAction SilentlyContinue)){
+      if (!(Get-ChildItem $BasePath -Name 'bdplus' -Directory -ErrorAction SilentlyContinue)){
 
         Write-Verbose -Message "Creating bdplus directory."
         $null = New-Item -Path $BasePath -Name bdplus -ItemType Directory
@@ -236,19 +238,19 @@ param (
       }
   
     }
-    catch { Write-Error 'Could not create bdplus directory' }
+    catch { Write-Error "Could not create bdplus directory: $($_.Nessage)" }
 
     # unpack
     $ProcArgs = @{
       FilePath               = $7zExePath
-      ArgumentList           = "x -aoa -o""$BasePath\bdplus"" $($BDPlusTablesArchive.FullName)" 
+      ArgumentList           = "x -aoa -o""$BasePath\bdplus"" $($BDPlusTablesArchiveObj.FullName)" 
       PassThru               = $true 
       NoNewWindow            = $true 
       Wait                   = $true 
       RedirectStandardOutput = "$env:temp\7z-bdplus.log" 
       RedirectStandardError  = "$env:temp\7z-bdplusErr.log"
     }
-    Write-Verbose -Message "Starting direct to destination unpack for: $($BDPlusTablesArchive.Name)" 
+    Write-Verbose -Message "Starting direct to destination unpack for: $($BDPlusTablesArchiveObj.Name)" 
     $7zRetCode = Start-Process @ProcArgs
 
     if ($7zRetCode.ExitCode -ne 0){
@@ -279,18 +281,20 @@ param (
     
     )
 
+    Write-Verbose -Message "Update-BDPlusTables: Begin"
+
     # Set base dir
     if ($PerUser){ $BasePath = $env:APPDATA }
     else { $BasePath = $env:ProgramData }
 
     # Get full archive file details
     Write-Verbose -Message "Collecting file details"
-    $BDPlusTablesUpdateArchives = $BDPlusTablesUpdateArchives | Get-Item
+    $BDPlusTablesUpdateArchivesObj = $BDPlusTablesUpdateArchives | Get-Item
 
     # Create dir
     try {
   
-      if (!(Get-ChildItem "$BasePath\bdplus" -Directory -ErrorAction SilentlyContinue)){
+      if (!(Get-ChildItem $BasePath -Name 'bdplus' -Directory -ErrorAction SilentlyContinue)){
         
         Write-Verbose -Message "Creating bdplus directory."
         $null = New-Item -Path $BasePath -Name bdplus -ItemType Directory
@@ -298,13 +302,9 @@ param (
       }
   
     }
-    catch {
- 
-      Write-Error 'Could not bdplus directory'
-  
-    }
+    catch { Write-Error "Could not bdplus directory: $($_.Nessage)" }
 
-    $BDPlusTablesUpdateArchives | Sort-Object BaseName | ForEach-Object { 
+    $BDPlusTablesUpdateArchivesObj | Sort-Object BaseName | ForEach-Object { 
 
       # unpack
       $ProcArgs = @{
@@ -314,7 +314,7 @@ param (
         NoNewWindow            = $true 
         Wait                   = $true 
         RedirectStandardOutput = "$env:temp\7z-$($_.BaseName).log" 
-        RedirectStandardError  = "$env:temp\7z-$($_.BaseName).log"
+        RedirectStandardError  = "$env:temp\7z-$($_.BaseName)Err.log"
       }
       Write-Verbose -Message "Starting direct to destination unpack for: $($_.Name)" 
       $7zRetCode = Start-Process @ProcArgs
@@ -337,7 +337,7 @@ param (
     param (
     
       [parameter(mandatory=$true)]
-      [ValidateScript({(Get-Item $_).extension -eq '.7z'})]
+      [ValidateScript({(Get-Item $_).extension -eq '.zip'})]
       [string]$BDPlusVM0Archive,
 
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
@@ -347,8 +347,10 @@ param (
     
     )
 
+    Write-Verbose -Message "Install-BDPlusVM0: Begin"
+
     # Get full archive file details
-    $BDPlusVM0Archive = Get-Item $BDPlusVM0Archive
+    $BDPlusVM0ArchiveObj = Get-Item $BDPlusVM0Archive
 
     # Set base dir
     if ($PerUser){ $BasePath = $env:APPDATA }
@@ -359,7 +361,7 @@ param (
     # Create dir
     try {
   
-      if (!(Get-ChildItem "$BasePath\vm0" -Directory -ErrorAction SilentlyContinue)){
+      if (!(Get-ChildItem $BasePath -Name 'vm0' -Directory -ErrorAction SilentlyContinue)){
         
         Write-Verbose -Message "Creating vm0 directory."
         $null = New-Item -Path $BasePath -Name vm0 -ItemType Directory -Force
@@ -367,23 +369,19 @@ param (
       }
   
     }
-    catch {
- 
-      Write-Error 'Could not create vm0 directory'
-  
-    }
+    catch { Write-Error "Could not create vm0 directory: $($_.Nessage)" }
 
     # unpack
     $ProcArgs = @{
       FilePath               = $7zExePath
-      ArgumentList           = "x -aoa -o""$BasePath\vm0"" $($BDPlusVM0Archive.FullName)" 
+      ArgumentList           = "x -aoa -o""$BasePath\vm0"" $($BDPlusVM0ArchiveObj.FullName)" 
       PassThru               = $true 
       NoNewWindow            = $true 
       Wait                   = $true 
       RedirectStandardOutput = "$env:temp\7z-vm0.log" 
       RedirectStandardError  = "$env:temp\7z-vm0Err.log"
     }
-    Write-Verbose -Message "Starting direct to destination unpack for: $($BDPlusVM0Archive.Name)" 
+    Write-Verbose -Message "Starting direct to destination unpack for: $($BDPlusVM0ArchiveObj.Name)" 
     $7zRetCode = Start-Process @ProcArgs
 
     if ($7zRetCode.ExitCode -ne 0){
@@ -415,6 +413,8 @@ param (
       [switch]$SuppressProgress
     
     )
+
+    Write-Verbose -Message "Install-KeyDB: Begin"
     
     # Set base dir
     if ($PerUser){ $BasePath = $env:APPDATA }
@@ -438,30 +438,30 @@ param (
       Write-Verbose -Message "Created temp dir: $($keyDBTempDir.FullName)"
       
     }
-    catch { Write-Error "Failed to create temporary unpack directory" }
+    catch { Write-Error "Failed to create temporary unpack directory: $($_.Nessage)" }
 
     # If we're using a provided keydb.zip, copy it to temp and rename. Otherwise, download the zip.
     if ($KeyDBZipArchive){
       
       try { 
       
-        $KeyDBZipArchive = Get-Item $KeyDBZipArchive
-        Copy-Item -LiteralPath $KeyDBZipArchive.FullName -Destination $keyDBZip -Force
+        $KeyDBZipArchiveObj = Get-Item $KeyDBZipArchive
+        Copy-Item -LiteralPath $KeyDBZipArchiveObj.FullName -Destination $keyDBZip -Force
         
       }
-      catch { Write-Error "Failed to copy provided Key DB zip file for unpacking" }
+      catch { Write-Error "Failed to copy provided Key DB zip file for unpacking: $($_.Nessage)" }
 
     }
     else{
 
       try {
   
-        Write-Verbose -Message "Attempting to download Key DB zip file. Be paatient, this might take a few min..."
+        Write-Warning -Message "Attempting to download Key DB zip file. Be paatient, this might take a few min..."
 
         Invoke-WebRequest "http://fvonline-db.bplaced.net/fv_download.php?lang=$Language" -OutFile $keyDBZip -ContentType "application/octet-stream"
      
        }
-       catch{ Write-Error "Failed to download Key DB zip file."}
+       catch{ Write-Error "Failed to download Key DB zip file: $($_.Nessage)"}
 
     }
 
@@ -489,29 +489,25 @@ param (
     }
     catch {
 
-      Write-Error 'Could not download KeyDB zip file.'
+      Write-Error "Could not download KeyDB zip file: $($_.Nessage)"
 
     }
 
     # IF DL/unpack success: copy to location
     try {
   
-      if (!(Get-ChildItem "$BasePath\aacs" -Directory -ErrorAction SilentlyContinue)){
+      if (!(Get-ChildItem $BasePath -Name 'aacs' -Directory -ErrorAction SilentlyContinue)){
 
         Write-Verbose -Message 'Creating aacs directory'
         $null = New-Item -Path $BasePath -Name aacs -ItemType Directory
 
       }
 
-      Write-Verbose -Message "Copying $($keyDBTempDir.FullName)\keydb.cfg  -->  $BasePath\aacs\"
-      Copy-Item -LiteralPath "$($keyDBTempDir.FullName)\keydb.cfg" -Destination "$BasePath\aacs\" -Force
+      Write-Verbose -Message "Copying $($keyDBTempDir.FullName)\keydb.cfg  -->  $BasePath\aacs"
+      Copy-Item -LiteralPath "$($keyDBTempDir.FullName)\keydb.cfg" -Destination "$BasePath\aacs" -Force
   
     }
-    catch {
- 
-      Write-Error 'Failed to copy keydb.cfg'
-  
-    }
+    catch { Write-Error "Failed to copy keydb.cfg: $($_.Nessage)" }
     
     # Cleanup temp files
     try { 
@@ -520,7 +516,7 @@ param (
       Remove-Item -LiteralPath $keyDBTempDir -Recurse -Force 
       
     }
-    catch {Write-Warning "Failed to remove temporary files located in: $($keyDBTempDir.FullName)"}
+    catch {Write-Warning "Failed to remove temporary files located in: $($keyDBTempDir.FullName): $($_.Nessage)"}
 
     Write-Verbose -Message "Install-KeyDB: Complete"
 
@@ -553,25 +549,25 @@ param (
   if (!(isAdmin)){ Write-Error "Not running as an admistrator/elevated. Exiting..." }
 
   # Verify Archive exists
-  try {  $LibAacsArchive = Get-ChildItem -LiteralPath $LibAacsArchive }
-  catch {  Write-Error "Could not locate archive for: libaacs_libaacsplus" }
+  try { $null = Get-ChildItem -LiteralPath $LibAacsArchive }
+  catch {  Write-Error "Could not locate archive for: libaacs_libaacsplus: $($_.Nessage)" }
 
   # Verify Archive exists
-  try {  $BDPlusVM0Archive = Get-ChildItem -LiteralPath $BDPlusVM0Archive }
-  catch {  Write-Error "Could not locate archive for: libaacs_libaacsplus" }
+  try { $null = Get-ChildItem -LiteralPath $BDPlusVM0Archive }
+  catch {  Write-Error "Could not locate archive for: libaacs_libaacsplus: $($_.Nessage)" }
 
   # Verify Archive exists
-  try { $BDPlusTablesArchive = Get-ChildItem -LiteralPath $BDPlusTablesArchive }
-  catch { Write-Error "Could not locate archive for: BD+ Tables" }
+  try { $null = Get-ChildItem -LiteralPath $BDPlusTablesArchive }
+  catch { Write-Error "Could not locate archive for: BD+ Tables: $($_.Nessage)" }
 
   # Verify Archives exist
-  try { $BDPlusTablesUpdateArchives | Get-Item}
-  catch { Write-Error "Could not locate archive for: BD+ Tables update" }
+  try { $null = $BDPlusTablesUpdateArchives | Get-Item }
+  catch { Write-Error "Could not locate archive for: BD+ Tables update: $($_.Nessage)" }
 
   # Verify VLC path exists
-  if (!$VLCPath -and !($VLCPath = (Get-VLCInfo).Path)){
+  if (!($VLCInfoObj = Get-VLCInfo)){
   
-    Write-Error "Could not locate VLC install path"
+    Write-Error "Could not locate VLC install info: $($_.Nessage)"
     break
 
   }
@@ -652,27 +648,22 @@ $deviceKeyBlob = @'
 
 #region - Process
   # Put the 32-bit or 64-bit libaacs/libbdplus DLLs (all 4) in the corresponding VLC directory:
-  Write-Verbose -Message "Executing: Install-LibAACS"
-  Install-LibAACS -LibAacsArchive $LibAacsArchive -VLCPath $VLCPath -VLCArchitecture (Get-VLCInfo).Bitness
+  Install-LibAACS -LibAacsArchive $LibAacsArchive -VLCPath $VLCInfoObj.Path -VLCArchitecture $VLCInfoObj.Bitness
 
 
   # BD+ VM - Put the BD+ vm files in the bdplus\vm0 directory
-  Write-Verbose -Message "Executing: Install-BDPlusVM0"
-  Install-BDPlusVM0 -BDPlusVM0Archive $BDPlusTablesArchive -PerUser:$PerUser
+  Install-BDPlusVM0 -BDPlusVM0Archive $BDPlusVM0Archive -PerUser:$PerUser
 
 
   # BD+ Tables
-  Write-Verbose -Message "Executing: Install-BDPlusTables"
-  Install-BDPlusTables -BDPlusTablesArchive $BDPlusTablesUpdateArchives -PerUser:$PerUser
+  Install-BDPlusTables -BDPlusTablesArchive $BDPlusTablesArchive -PerUser:$PerUser
 
 
   # BD+ Tables Updates
-  Write-Verbose -Message "Executing: Update-BDPlusTables"
   Update-BDPlusTables -BDPlusTablesUpdateArchives $BDPlusTablesUpdateArchives -PerUser:$PerUser
 
 
   # Put the FindVUK KEYDB.cfg in the %APPDATA%\aacs directory
-  Write-Verbose -Message "Executing: Install-KeyDB"
   Install-KeyDB -Language $Language -PerUser:$PerUser
 
 

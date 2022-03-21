@@ -24,8 +24,6 @@ All parameters are optional... If the parameter defaults in the script are corre
 
 *`-Verbose` is, however, recommended.*
 
-  - `-VLCPath` =  String, folder VLC is installed in
-
   - `-LibAacsArchive` = String, libaacs 7z archive
 
   - `-BDPlusVM0Archive` = String, vm0 zip file
