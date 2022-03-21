@@ -18,6 +18,8 @@ The script will download the keydb_xxx.zip file at run time, but a previously do
 
 ## Parameters
 
+`[cmdletbinding()]` is declared but, at this time, only `-Verbose` is supported.
+
 All parameters are optional... If the parameter defaults in the script are correct then no parameters are required and install.ps1 can be run bare. 
 
 *`-Verbose` is, however, recommended.*
