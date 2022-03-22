@@ -65,13 +65,15 @@
 [cmdletbinding()]
 param (
 
-  [String]$LibAacsArchive = '.\2020-07-26_libaacs_libbdplus.7z',
+  [string]$SevenZexePath = "$PSScriptRoot\7z.exe",
 
-  [string]$BDPlusVM0Archive = ".\vm0.zip",
+  [String]$LibAacsArchive = "$PSScriptRoot\2020-07-26_libaacs_libbdplus.7z",
 
-  [string]$BDPlusTablesArchive = '.\2019-09-29_bdplus_tables.7z',
+  [string]$BDPlusVM0Archive = "$PSScriptRoot\vm0.zip",
 
-  [string[]]$BDPlusTablesUpdateArchives = ('.\2020-07-05_bdplus_tables_update.7z', '.\2021-01-06_bdplus_tables_update.7z'),
+  [string]$BDPlusTablesArchive = "$PSScriptRoot\2019-09-29_bdplus_tables.7z",
+
+  [string[]]$BDPlusTablesUpdateArchives = ("$PSScriptRoot\2020-07-05_bdplus_tables_update.7z", "$PSScriptRoot\2021-01-06_bdplus_tables_update.7z"),
 
   [ValidateScript({$_ -match "^[a-zA-Z]{3}$"})]
   [string]$Language = (Get-Culture).ThreeLetterISOLanguageName,
@@ -135,8 +137,9 @@ param (
       [validateset(32,64)]
       [int]$VLCArchitecture,
 
+      [parameter(mandatory=$true)]
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
-      [string]$7zExePath = '.\7z.exe'
+      [string]$SevenZexePath
     
     )
     
@@ -158,7 +161,7 @@ param (
 
     # unpack
     $procArgs = @{
-      FilePath               = $7zExePath 
+      FilePath               = $SevenZexePath 
       ArgumentList           = "x -aoa -o""$($libAacsUnpackDir.FullName)"" ""$($LibAacsArchiveObj.FullName)""" 
       PassThru               = $true
       NoNewWindow            = $true
@@ -210,8 +213,9 @@ param (
       [ValidateScript({(Get-Item $_).extension -eq '.7z'})]
       [string]$BDPlusTablesArchive,
 
+      [parameter(mandatory=$true)]
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
-      [string]$7zExePath = '.\7z.exe',
+      [string]$SevenZexePath,
 
       [switch]$PerUser
     
@@ -242,7 +246,7 @@ param (
 
     # unpack
     $ProcArgs = @{
-      FilePath               = $7zExePath
+      FilePath               = $SevenZexePath
       ArgumentList           = "x -aoa -o""$BasePath\bdplus"" $($BDPlusTablesArchiveObj.FullName)" 
       PassThru               = $true 
       NoNewWindow            = $true 
@@ -274,8 +278,9 @@ param (
       })]
       [string[]]$BDPlusTablesUpdateArchives,
 
+      [parameter(mandatory=$true)]
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
-      [string]$7zExePath = '.\7z.exe',
+      [string]$SevenZexePath,
 
       [switch]$PerUser
     
@@ -308,7 +313,7 @@ param (
 
       # unpack
       $ProcArgs = @{
-        FilePath               = $7zExePath
+        FilePath               = $SevenZexePath
         ArgumentList           = "x -aoa -o""$BasePath\bdplus"" $($_.FullName)" 
         PassThru               = $true 
         NoNewWindow            = $true 
@@ -340,8 +345,9 @@ param (
       [ValidateScript({(Get-Item $_).extension -eq '.zip'})]
       [string]$BDPlusVM0Archive,
 
+      [parameter(mandatory=$true)]
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
-      [string]$7zExePath = '.\7z.exe',
+      [string]$SevenZexePath,
 
       [switch]$PerUser
     
@@ -373,7 +379,7 @@ param (
 
     # unpack
     $ProcArgs = @{
-      FilePath               = $7zExePath
+      FilePath               = $SevenZexePath
       ArgumentList           = "x -aoa -o""$BasePath\vm0"" $($BDPlusVM0ArchiveObj.FullName)" 
       PassThru               = $true 
       NoNewWindow            = $true 
@@ -405,8 +411,9 @@ param (
       [ValidateScript({(Get-Item $_).Name -match '^keydb_[a-zA-Z]{3}.zip$'})]
       [string]$KeyDBZipArchive,
 
+      [parameter(mandatory=$true)]
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
-      [string]$7zExePath = '.\7z.exe',
+      [string]$SevenZexePath,
 
       [switch]$PerUser,
 
@@ -469,7 +476,7 @@ param (
     try { 
 
       $ProcArgs = @{
-        FilePath               = $7zExePath 
+        FilePath               = $SevenZexePath 
         ArgumentList           = "x -aoa -o""$($keyDBTempDir.FullName)"" $keyDBZip" 
         PassThru               = $true
         NoNewWindow            = $true 
@@ -648,23 +655,23 @@ $deviceKeyBlob = @'
 
 #region - Process
   # Put the 32-bit or 64-bit libaacs/libbdplus DLLs (all 4) in the corresponding VLC directory:
-  Install-LibAACS -LibAacsArchive $LibAacsArchive -VLCPath $VLCInfoObj.Path -VLCArchitecture $VLCInfoObj.Bitness
+  Install-LibAACS -LibAacsArchive $LibAacsArchive -VLCPath $VLCInfoObj.Path -VLCArchitecture $VLCInfoObj.Bitness -SevenZexePath $SevenZexePath
 
 
   # BD+ VM - Put the BD+ vm files in the bdplus\vm0 directory
-  Install-BDPlusVM0 -BDPlusVM0Archive $BDPlusVM0Archive -PerUser:$PerUser
+  Install-BDPlusVM0 -BDPlusVM0Archive $BDPlusVM0Archive -PerUser:$PerUser -SevenZexePath $SevenZexePath
 
 
   # BD+ Tables
-  Install-BDPlusTables -BDPlusTablesArchive $BDPlusTablesArchive -PerUser:$PerUser
+  Install-BDPlusTables -BDPlusTablesArchive $BDPlusTablesArchive -PerUser:$PerUser -SevenZexePath $SevenZexePath
 
 
   # BD+ Tables Updates
-  Update-BDPlusTables -BDPlusTablesUpdateArchives $BDPlusTablesUpdateArchives -PerUser:$PerUser
+  Update-BDPlusTables -BDPlusTablesUpdateArchives $BDPlusTablesUpdateArchives -PerUser:$PerUser -SevenZexePath $SevenZexePath
 
 
   # Put the FindVUK KEYDB.cfg in the %APPDATA%\aacs directory
-  Install-KeyDB -Language $Language -PerUser:$PerUser
+  Install-KeyDB -Language $Language -PerUser:$PerUser -SevenZexePath $SevenZexePath
 
 
   #KeyDB Manual Steps - Edit the KEDYB.cfg and put the keys and certs
