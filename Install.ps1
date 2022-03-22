@@ -561,7 +561,7 @@ param (
 
   # Verify Archive exists
   try { $null = Get-ChildItem -LiteralPath $BDPlusVM0Archive }
-  catch {  Write-Error "Could not locate archive for: libaacs_libaacsplus: $($_.Nessage)" }
+  catch {  Write-Error "Could not locate archive for: vm0: $($_.Nessage)" }
 
   # Verify Archive exists
   try { $null = Get-ChildItem -LiteralPath $BDPlusTablesArchive }
