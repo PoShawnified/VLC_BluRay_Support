@@ -210,8 +210,10 @@ param (
     param (
     
       [parameter(mandatory=$true)]
-      [ValidateScript({(Get-Item $_).extension -eq '.7z'})]
-      [string]$BDPlusTablesArchive,
+      [ValidateScript({
+        $_ | ForEach-Object {(Get-Item $_).extension -eq '.7z'}
+      })]
+      [string[]]$BDPlusTablesArchives,
 
       [parameter(mandatory=$true)]
       [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
@@ -223,98 +225,33 @@ param (
 
     Write-Verbose -Message "Install-BDPlusTables: Begin"
 
+    # Set base dir
+    if ($PerUser){ $BasePath = "$($env:APPDATA)\bdplus" }
+    else { $BasePath = "$($env:ProgramData)\bdplus" }
+
     # Get full archive file details
     Write-Verbose -Message "Collecting file details"
-    $BDPlusTablesArchiveObj = Get-Item $BDPlusTablesArchive
-
-    # Set base dir
-    if ($PerUser){ $BasePath = $env:APPDATA }
-    else { $BasePath = $env:ProgramData }
+    $BDPlusTablesArchivesObj = $BDPlusTablesArchives | Get-Item
 
     # Create dir
     try {
   
-      if (!(Get-ChildItem $BasePath -Name 'bdplus' -Directory -ErrorAction SilentlyContinue)){
-
-        Write-Verbose -Message "Creating bdplus directory."
-        $null = New-Item -Path $BasePath -Name bdplus -ItemType Directory
-
-      }
-  
-    }
-    catch { Write-Error "Could not create bdplus directory: $($_.Nessage)" }
-
-    # unpack
-    $ProcArgs = @{
-      FilePath               = $SevenZexePath
-      ArgumentList           = "x -aoa -o""$BasePath\bdplus"" $($BDPlusTablesArchiveObj.FullName)" 
-      PassThru               = $true 
-      NoNewWindow            = $true 
-      Wait                   = $true 
-      RedirectStandardOutput = "$env:temp\7z-bdplus.log" 
-      RedirectStandardError  = "$env:temp\7z-bdplusErr.log"
-    }
-    Write-Verbose -Message "Starting direct to destination unpack for: $($BDPlusTablesArchiveObj.Name)" 
-    $7zRetCode = Start-Process @ProcArgs
-
-    if ($7zRetCode.ExitCode -ne 0){
-
-      Write-Error "7z.exe failed to unpack bdplus files (Return code: $($7zRetCode.ExitCode)). 7z logs are located in: $env:temp"
-
-    }
-
-    Write-Verbose -Message "Install-BDPlusTables: Complete"
-  
-  }
-
-  function Update-BDPlusTables {
-  
-    [cmdletbinding()]
-    param (
-    
-      [parameter(mandatory=$true)]
-      [ValidateScript({
-        $_ | ForEach-Object {(Get-Item $_).extension -eq '.7z'}
-      })]
-      [string[]]$BDPlusTablesUpdateArchives,
-
-      [parameter(mandatory=$true)]
-      [ValidateScript({(Get-Item $_).Name -eq '7z.exe'})]
-      [string]$SevenZexePath,
-
-      [switch]$PerUser
-    
-    )
-
-    Write-Verbose -Message "Update-BDPlusTables: Begin"
-
-    # Set base dir
-    if ($PerUser){ $BasePath = $env:APPDATA }
-    else { $BasePath = $env:ProgramData }
-
-    # Get full archive file details
-    Write-Verbose -Message "Collecting file details"
-    $BDPlusTablesUpdateArchivesObj = $BDPlusTablesUpdateArchives | Get-Item
-
-    # Create dir
-    try {
-  
-      if (!(Get-ChildItem $BasePath -Name 'bdplus' -Directory -ErrorAction SilentlyContinue)){
+      if (!(Get-ChildItem $BasePath -Name 'convtab' -Directory -ErrorAction SilentlyContinue)){
         
         Write-Verbose -Message "Creating bdplus directory."
-        $null = New-Item -Path $BasePath -Name bdplus -ItemType Directory
+        $null = New-Item -Path $BasePath -Name 'convtab' -ItemType Directory
 
       }
   
     }
-    catch { Write-Error "Could not bdplus directory: $($_.Nessage)" }
+    catch { Write-Error "Could not create bdplus\convtab directory: $($_.Nessage)" }
 
-    $BDPlusTablesUpdateArchivesObj | Sort-Object BaseName | ForEach-Object { 
+    $BDPlusTablesArchivesObj | Sort-Object BaseName | ForEach-Object { 
 
       # unpack
       $ProcArgs = @{
         FilePath               = $SevenZexePath
-        ArgumentList           = "x -aoa -o""$BasePath\bdplus"" $($_.FullName)" 
+        ArgumentList           = "x -aoa -o""$BasePath\convtab"" $($_.FullName)" 
         PassThru               = $true 
         NoNewWindow            = $true 
         Wait                   = $true 
@@ -332,7 +269,7 @@ param (
 
     }
 
-    Write-Verbose -Message "Update-BDPlusTables: Complete"
+    Write-Verbose -Message "Install-BDPlusTables: Complete"
   
   }
 
@@ -359,10 +296,8 @@ param (
     $BDPlusVM0ArchiveObj = Get-Item $BDPlusVM0Archive
 
     # Set base dir
-    if ($PerUser){ $BasePath = $env:APPDATA }
-    else { $BasePath = $env:ProgramData }
-
-    $BasePath = "$BasePath\bdplus"
+    if ($PerUser){ $BasePath = "$($env:APPDATA)\bdplus" }
+    else { $BasePath = "$($env:ProgramData)\bdplus" }
 
     # Create dir
     try {
@@ -549,11 +484,11 @@ param (
 
 #region - Setup / Checks
 
-  # Set error action to stop
+  # All exceptions must be handled
   $ErrorActionPreference = 'Stop'
 
   # Check for admin rights
-  if (!(isAdmin)){ Write-Error "Not running as an admistrator/elevated. Exiting..." }
+  if (!(isAdmin)){ Write-Error "Not running as admistrator/elevated. Exiting..." }
 
   # Verify Archive exists
   try { $null = Get-ChildItem -LiteralPath $LibAacsArchive }
@@ -663,11 +598,11 @@ $deviceKeyBlob = @'
 
 
   # BD+ Tables
-  Install-BDPlusTables -BDPlusTablesArchive $BDPlusTablesArchive -PerUser:$PerUser -SevenZexePath $SevenZexePath
+  Install-BDPlusTables -BDPlusTablesArchives $BDPlusTablesArchive -PerUser:$PerUser -SevenZexePath $SevenZexePath
 
 
   # BD+ Tables Updates
-  Update-BDPlusTables -BDPlusTablesUpdateArchives $BDPlusTablesUpdateArchives -PerUser:$PerUser -SevenZexePath $SevenZexePath
+  Install-BDPlusTables -BDPlusTablesArchives $BDPlusTablesUpdateArchives -PerUser:$PerUser -SevenZexePath $SevenZexePath
 
 
   # Put the FindVUK KEYDB.cfg in the %APPDATA%\aacs directory
