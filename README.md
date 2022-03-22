@@ -37,9 +37,9 @@ All parameters are optional... If the parameter defaults in the script are corre
   - `-PerUser` = Switch, changes output targets to User locations. Default is system locations
 
 ## Credits / Info
-- ### Partial automation of manual steps provided here: https://forum.doom9.org/showthread.php?p=1886086#post1886086 (credit to [candela](https://forum.doom9.org/member.php?u=78000))
+- Partial automation of manual steps provided here: https://forum.doom9.org/showthread.php?p=1886086#post1886086 (credit to [candela](https://forum.doom9.org/member.php?u=78000))
 
-- ### 7-Zip: This project includes portions on the 7-Zip application. 7-Zip is licensed under the GNU LGPL license. 7-Zip source-code (along with downloads, info and FAQs) can be found at [www.7-zip.org](www.7-zip.org)
+- 7-Zip: This project includes portions on the 7-Zip application. 7-Zip is licensed under the GNU LGPL license. 7-Zip source-code (along with downloads, info and FAQs) can be found at [www.7-zip.org](https://www.7-zip.org)
 
 #### Manual Instructions:
 - How To (Windows): 
