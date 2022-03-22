@@ -65,7 +65,7 @@
 [cmdletbinding()]
 param (
 
-  [string]$SevenZexePath = "$PSScriptRoot\7z.exe",
+  [string]$SevenZexePath = "$PSScriptRoot\7zip\7z.exe",
 
   [String]$LibAacsArchive = "$PSScriptRoot\2020-07-26_libaacs_libbdplus.7z",
 

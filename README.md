@@ -5,11 +5,11 @@
 
 The script will download the keydb_xxx.zip file at run time, but a previously downloaded zip can be passed as a param instead. 
 
+Each step is written as a discreet cmdlet that should allow running any step independently. 
 ## Prep
 1. Clone repo
-2. Place 7z.exe and 7z.dll into repo directory
-3. Place all .7z and .zip archives (`\*libaacs\*.7z`, `\*bdplus_tables\*.7z`, `vm0.zip`) archives into repo directory
-4. Modify parameters with correct file names (or pass updated file names as params at the command-line)
+2. Place all .7z and .zip archives (`\*libaacs\*.7z`, `\*bdplus_tables\*.7z`, `vm0.zip`) archives into repo directory
+3. Modify parameters with correct file names (or pass updated file names as params at the command-line)
 
 ## Execute
 1. *AS ADMINISTRATOR*, run PowerShell.exe (or PowerShell_ise.exe)
@@ -37,7 +37,9 @@ All parameters are optional... If the parameter defaults in the script are corre
   - `-PerUser` = Switch, changes output targets to User locations. Default is system locations
 
 ## Credits / Info
-### Partial automation of manual steps provided here: https://forum.doom9.org/showthread.php?p=1886086#post1886086 (credit to [candela](https://forum.doom9.org/member.php?u=78000))
+- ### Partial automation of manual steps provided here: https://forum.doom9.org/showthread.php?p=1886086#post1886086 (credit to [candela](https://forum.doom9.org/member.php?u=78000))
+
+- ### 7-Zip: This project includes portions on the 7-Zip application. 7-Zip is licensed under the GNU LGPL license. 7-Zip source-code (along with downloads, info and FAQs) can be found at [www.7-zip.org](www.7-zip.org)
 
 #### Manual Instructions:
 - How To (Windows): 
