@@ -8,7 +8,7 @@ The script will download the keydb_xxx.zip file at run time, but a previously do
 Each step is written as a discreet cmdlet that should allow running any step independently. 
 ## Prep
 1. Clone repo
-2. Place all .7z and .zip archives (`\*libaacs\*.7z`, `\*bdplus_tables\*.7z`, `vm0.zip`) archives into repo directory
+2. Place all .7z and .zip archives (`*libaacs*.7z`, `*bdplus_tables*.7z`, `vm0.zip`) archives into repo directory
 3. Modify parameters with correct file names (or pass updated file names as params at the command-line)
 
 ## Execute
